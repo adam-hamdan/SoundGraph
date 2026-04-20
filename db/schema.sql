@@ -74,7 +74,6 @@ CREATE TABLE AwardHistory (
     year            YEAR NOT NULL,
     outcome         VARCHAR(20) NOT NULL,
     CHECK (outcome IN ('Won', 'Nominated')),
-    CHECK (artist_id IS NOT NULL OR track_id IS NOT NULL),
     FOREIGN KEY (artist_id) REFERENCES Artist(artist_id) ON DELETE SET NULL,
     FOREIGN KEY (track_id) REFERENCES Track(track_id) ON DELETE SET NULL
 );

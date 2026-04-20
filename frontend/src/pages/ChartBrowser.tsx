@@ -5,7 +5,7 @@ import ResultsTable from '../components/ResultsTable'
 const VIEWS = ['Chart Entries', 'Genre Dominance', '#1 Hits', 'Multi-Country Tracks']
 
 export default function ChartBrowser() {
-  const [view, setView] = useState(0)
+  const [view, setView]       = useState(0)
   const [country, setCountry] = useState('USA')
   const [results, setResults] = useState<Record<string, unknown>[]>([])
   const [loading, setLoading] = useState(false)
@@ -31,22 +31,33 @@ export default function ChartBrowser() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-100 mb-1">Charts</h1>
-        <p className="text-slate-500 text-sm">Explore chart history and genre performance.</p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+      <div className="fade-up">
+        <h1 style={{
+          fontFamily: 'Syne, sans-serif', fontWeight: 800,
+          fontSize: 28, letterSpacing: '-0.02em',
+          color: 'var(--text-primary)', marginBottom: 4,
+        }}>
+          Charts
+        </h1>
+        <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>
+          Explore chart history and genre performance.
+        </p>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="fade-up" style={{ display: 'flex', flexWrap: 'wrap', gap: 6, animationDelay: '40ms' }}>
         {VIEWS.map((v, i) => (
           <button
             key={i}
             onClick={() => handleView(i)}
-            className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
-              view === i
-                ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                : 'text-slate-400 border border-white/10 hover:text-slate-200'
-            }`}
+            style={{
+              padding: '5px 14px', borderRadius: 6,
+              fontSize: 13, fontWeight: 500,
+              cursor: 'pointer', transition: 'all 0.14s',
+              background: view === i ? 'var(--purple-dim)' : 'transparent',
+              color: view === i ? 'var(--purple)' : 'var(--text-secondary)',
+              border: `1px solid ${view === i ? 'var(--border-active)' : 'var(--border-mid)'}`,
+            }}
           >
             {v}
           </button>
@@ -54,7 +65,7 @@ export default function ChartBrowser() {
       </div>
 
       {(view === 0 || view === 1) && (
-        <div className="flex gap-2 items-center">
+        <div className="fade-up" style={{ animationDelay: '60ms' }}>
           <SearchBar
             value={country}
             onChange={setCountry}
@@ -64,7 +75,7 @@ export default function ChartBrowser() {
         </div>
       )}
 
-      {loading && <p className="text-slate-500 text-sm">Loading…</p>}
+      {loading && <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading…</p>}
       {!loading && <ResultsTable rows={results} />}
     </div>
   )

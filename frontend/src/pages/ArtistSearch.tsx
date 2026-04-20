@@ -1,18 +1,19 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import SearchBar from '../components/SearchBar'
 
 type Artist = Record<string, unknown>
 
 const SEARCH_MODES = [
-  { label: 'Name', param: 'name' },
+  { label: 'Name',    param: 'name'    },
   { label: 'Country', param: 'country' },
-  { label: 'Genre', param: 'genre' },
+  { label: 'Genre',   param: 'genre'   },
 ]
 
+const COL_HEADERS = ['Name', 'Country', 'Debut', 'Monthly Listeners', 'Genres', '']
+
 export default function ArtistSearch() {
-  const [query, setQuery] = useState('')
-  const [mode, setMode] = useState(0)
+  const [query, setQuery]     = useState('')
+  const [mode, setMode]       = useState(0)
   const [results, setResults] = useState<Artist[]>([])
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
@@ -29,87 +30,194 @@ export default function ArtistSearch() {
     finally { setLoading(false) }
   }
 
-  function handleSearch() { fetchArtists(query) }
-
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-100 mb-1">Artists</h1>
-        <p className="text-slate-500 text-sm">Browse and search the SoundGraph artist database.</p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+
+      {/* Page header */}
+      <div className="fade-up" style={{ animationDelay: '0ms' }}>
+        <h1 style={{
+          fontFamily: 'Syne, sans-serif', fontWeight: 800,
+          fontSize: 28, letterSpacing: '-0.02em',
+          color: 'var(--text-primary)', marginBottom: 4,
+        }}>
+          Artists
+        </h1>
+        <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>
+          Browse and search the SoundGraph artist database.
+        </p>
       </div>
 
-      <div className="space-y-3">
-        <div className="flex gap-2">
+      {/* Search controls */}
+      <div className="fade-up" style={{ display: 'flex', flexDirection: 'column', gap: 10, animationDelay: '40ms' }}>
+        <div style={{ display: 'flex', gap: 4 }}>
           {SEARCH_MODES.map((m, i) => (
             <button
               key={i}
               onClick={() => setMode(i)}
-              className={`px-3 py-1 rounded text-sm transition-colors ${
-                mode === i
-                  ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                  : 'text-slate-500 hover:text-slate-300 border border-transparent'
-              }`}
+              style={{
+                padding: '4px 14px', borderRadius: 20,
+                fontSize: 12, fontWeight: 500,
+                cursor: 'pointer', transition: 'all 0.14s',
+                background: mode === i ? 'var(--purple-dim)' : 'transparent',
+                color: mode === i ? 'var(--purple)' : 'var(--text-muted)',
+                border: `1px solid ${mode === i ? 'var(--border-active)' : 'transparent'}`,
+              }}
             >
               {m.label}
             </button>
           ))}
         </div>
-        <SearchBar
-          value={query}
-          onChange={setQuery}
-          onSubmit={handleSearch}
-          placeholder={`Search by ${SEARCH_MODES[mode].label.toLowerCase()}...`}
-        />
+
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input
+            type="text"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && fetchArtists(query)}
+            placeholder={`Search by ${SEARCH_MODES[mode].label.toLowerCase()}...`}
+            style={{
+              flex: 1,
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--border-mid)',
+              borderRadius: 8, padding: '8px 14px',
+              fontSize: 13, color: 'var(--text-primary)',
+              fontFamily: 'DM Sans, sans-serif',
+              transition: 'border-color 0.14s',
+            }}
+          />
+          <button
+            onClick={() => fetchArtists(query)}
+            style={{
+              padding: '8px 20px',
+              background: 'var(--purple)', color: '#fff',
+              borderRadius: 8, fontSize: 13, fontWeight: 600,
+              border: 'none', cursor: 'pointer', transition: 'opacity 0.14s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.opacity = '0.82')}
+            onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+          >
+            Search
+          </button>
+        </div>
       </div>
 
-      {loading && <p className="text-slate-500 text-sm">Loading…</p>}
+      {/* Loading */}
+      {loading && (
+        <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading…</p>
+      )}
 
+      {/* Table */}
       {!loading && results.length > 0 && (
-        <div>
-          <div className="overflow-x-auto rounded-lg border border-white/10">
-            <table className="w-full text-sm">
+        <div className="fade-up" style={{ animationDelay: '80ms' }}>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
-                <tr className="bg-white/5 text-slate-400">
-                  <th className="px-3 py-2 text-left">Name</th>
-                  <th className="px-3 py-2 text-left">Country</th>
-                  <th className="px-3 py-2 text-left">Debut</th>
-                  <th className="px-3 py-2 text-right">Monthly Listeners</th>
-                  <th className="px-3 py-2 text-left">Genres</th>
-                  <th className="px-3 py-2"></th>
+                <tr style={{ borderBottom: '1px solid var(--border-mid)' }}>
+                  {COL_HEADERS.map((h, i) => (
+                    <th
+                      key={i}
+                      style={{
+                        padding: '7px 12px',
+                        textAlign: i === 3 ? 'right' : 'left',
+                        color: 'var(--text-muted)',
+                        fontWeight: 500,
+                        fontSize: 10.5,
+                        letterSpacing: '0.07em',
+                        textTransform: 'uppercase',
+                        fontFamily: 'JetBrains Mono, monospace',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {h}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {results.map((a, i) => (
-                  <tr key={i} className="border-t border-white/5 hover:bg-white/3">
-                    <td className="px-3 py-2 font-medium text-slate-200">{String(a.name)}</td>
-                    <td className="px-3 py-2 text-slate-400">{String(a.country)}</td>
-                    <td className="px-3 py-2 text-slate-400">{String(a.debut_year)}</td>
-                    <td className="px-3 py-2 text-right text-green-400 font-mono text-xs">
-                      {Number(a.monthly_listeners).toLocaleString()}
-                    </td>
-                    <td className="px-3 py-2 text-slate-500 text-xs max-w-xs truncate">
-                      {String(a.genres ?? '—')}
-                    </td>
-                    <td className="px-3 py-2">
-                      <button
-                        onClick={() => navigate(`/artist/${a.artist_id}`)}
-                        className="text-xs text-purple-400 hover:text-purple-300 transition-colors"
-                      >
-                        Report →
-                      </button>
-                    </td>
-                  </tr>
+                  <ArtistRow
+                    key={i}
+                    artist={a}
+                    index={i}
+                    onReport={() => navigate(`/artist/${a.artist_id}`)}
+                  />
                 ))}
               </tbody>
             </table>
           </div>
-          <p className="text-xs text-slate-600 mt-1">{results.length} artists</p>
+          <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8 }}>
+            {results.length} artist{results.length !== 1 ? 's' : ''}
+          </p>
         </div>
       )}
 
       {!loading && results.length === 0 && (
-        <p className="text-slate-500 text-sm">No artists found.</p>
+        <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>No artists found.</p>
       )}
     </div>
+  )
+}
+
+function ArtistRow({ artist: a, index: i, onReport }: {
+  artist: Artist
+  index: number
+  onReport: () => void
+}) {
+  const [hovered, setHovered] = useState(false)
+
+  return (
+    <tr
+      style={{
+        borderBottom: '1px solid var(--border)',
+        background: hovered ? 'var(--bg-surface)' : i % 2 === 1 ? 'rgba(255,255,255,0.012)' : 'transparent',
+        transition: 'background 0.12s',
+        animation: `fadeUp 0.22s ease ${Math.min(i * 0.018, 0.32)}s both`,
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <td style={{ padding: '9px 12px', fontWeight: 500, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+        {String(a.name)}
+      </td>
+      <td style={{ padding: '9px 12px', color: 'var(--text-secondary)' }}>
+        {String(a.country)}
+      </td>
+      <td style={{
+        padding: '9px 12px', color: 'var(--text-secondary)',
+        fontFamily: 'JetBrains Mono, monospace', fontSize: 12,
+      }}>
+        {String(a.debut_year)}
+      </td>
+      <td style={{
+        padding: '9px 12px', textAlign: 'right',
+        color: 'var(--cyan)',
+        fontFamily: 'JetBrains Mono, monospace', fontSize: 12, fontWeight: 500,
+        whiteSpace: 'nowrap',
+      }}>
+        {Number(a.monthly_listeners).toLocaleString('en-US')}
+      </td>
+      <td style={{
+        padding: '9px 12px', color: 'var(--text-muted)', fontSize: 12,
+        maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+      }}>
+        {String(a.genres ?? '—')}
+      </td>
+      <td style={{ padding: '9px 12px', whiteSpace: 'nowrap' }}>
+        <button
+          onClick={onReport}
+          style={{
+            fontSize: 12, color: 'var(--purple)',
+            background: 'none', border: 'none',
+            cursor: 'pointer', fontWeight: 500,
+            fontFamily: 'DM Sans, sans-serif',
+            opacity: hovered ? 1 : 0.65,
+            transition: 'opacity 0.12s',
+            padding: 0,
+          }}
+        >
+          Report →
+        </button>
+      </td>
+    </tr>
   )
 }
