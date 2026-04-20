@@ -3,7 +3,7 @@ import ResultsTable from '../components/ResultsTable'
 
 export default function EmergingArtists() {
   const [debutFrom,    setDebutFrom]    = useState('2018')
-  const [minListeners, setMinListeners] = useState('5000000')
+  const [minListeners, setMinListeners] = useState('500000')
   const [maxWins,      setMaxWins]      = useState('1')
   const [results,      setResults]      = useState<Record<string, unknown>[]>([])
   const [loading,      setLoading]      = useState(false)
