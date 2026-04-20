@@ -11,11 +11,29 @@ Team: Alvisa Krasniqi, Adam Hamdan, Eva-Jessy Ouach, Robert Beletsky
 
 ---
 
-## Setup
+## Prerequisites
+
+- Java 17+
+- Maven 3.8+
+- Node.js 20+
+- MySQL 8.x running locally
+
+---
+
+## Quick Setup (automated)
+
+```bash
+./setup.sh
+```
+
+This creates the database, loads the schema, sample data, and triggers, installs frontend dependencies, and builds the JAR — all in one step. You will be prompted for your MySQL root password.
+
+---
+
+## Manual Setup
 
 ### 1. Database
 ```bash
-# Create schema and load data
 mysql -u root -p < db/schema.sql
 mysql -u root -p soundgraph < db/data.sql
 mysql -u root -p soundgraph < db/triggers.sql
@@ -29,28 +47,38 @@ db.user=root
 db.password=YOUR_PASSWORD
 ```
 
-### 3. Build Java
+### 3. Build
 ```bash
 mvn package
+cd frontend && npm install
 ```
 
-### 4. Run CLI
+---
+
+## Running the App
+
+### Option A — One command (starts everything)
+```bash
+./run.sh
+```
+Starts the Java backend on port 8080 and the React frontend on port 5173. Open **http://localhost:5173**.
+
+### Option B — CLI only
 ```bash
 java -jar target/soundgraph.jar
 ```
+Interactive menu-driven interface. Lets you search artists, browse charts, manage playlists, and run custom SELECT queries — all via JDBC without touching the database command line.
 
-### 5. Run Web UI
-In one terminal:
+### Option C — Web UI manually
+Terminal 1:
 ```bash
 java -jar target/soundgraph.jar --web
 ```
-
-In another:
+Terminal 2:
 ```bash
-cd frontend && npm install && npm run dev
+cd frontend && npm run dev
 ```
-
-Open http://localhost:5173
+Open **http://localhost:5173**
 
 ---
 
