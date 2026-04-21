@@ -1,126 +1,121 @@
 import { useState } from 'react'
 import SearchBar from '../components/SearchBar'
-import ResultsTable from '../components/ResultsTable'
+import DataTable from '../components/DataTable'
+import PageSpinner from '../components/PageSpinner'
+import EmptyState from '../components/EmptyState'
+import { Music2 } from 'lucide-react'
 
 export default function Playlists() {
-  const [username,         setUsername]         = useState('fan_casey')
-  const [playlists,        setPlaylists]        = useState<Record<string, unknown>[]>([])
-  const [tracks,           setTracks]           = useState<Record<string, unknown>[]>([])
-  const [selectedPlaylist, setSelectedPlaylist] = useState<string>('')
-  const [loading,          setLoading]          = useState(false)
+  const [username, setUsername] = useState('fan_casey')
+  const [playlists, setPlaylists] = useState<Record<string, unknown>[]>([])
+  const [tracks, setTracks] = useState<Record<string, unknown>[]>([])
+  const [selectedPlaylist, setSelectedPlaylist] = useState('')
+  const [loading, setLoading] = useState(false)
 
   async function loadPlaylists() {
     setLoading(true)
     setTracks([])
+    setSelectedPlaylist('')
     try {
       const res = await fetch(`/api/playlists?username=${encodeURIComponent(username)}`)
-      setPlaylists(await res.json())
-    } catch { setPlaylists([]) }
-    finally { setLoading(false) }
+      const data = await res.json()
+      setPlaylists(Array.isArray(data) ? data : [])
+    } catch {
+      setPlaylists([])
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function loadTracks(pid: number) {
     setSelectedPlaylist(String(pid))
-    const res = await fetch(`/api/playlists/${pid}/tracks`)
-    setTracks(await res.json())
+    try {
+      const res = await fetch(`/api/playlists/${pid}/tracks`)
+      const data = await res.json()
+      setTracks(Array.isArray(data) ? data : [])
+    } catch {
+      setTracks([])
+    }
   }
 
+  const hints = ['fan_casey', 'journalist_alex', 'ar_rep_morgan']
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
-      <div className="fade-up">
-        <h1 style={{
-          fontFamily: 'Syne, sans-serif', fontWeight: 800,
-          fontSize: 28, letterSpacing: '-0.02em',
-          color: 'var(--text-primary)', marginBottom: 4,
-        }}>
+    <div className="space-y-12">
+      <header className="space-y-4">
+        <p className="font-mono text-[10px] font-semibold uppercase leading-relaxed tracking-widest text-cyan-500/80">
+          Fans
+        </p>
+        <h1 className="font-display text-3xl font-bold leading-[1.12] tracking-tight text-slate-100 sm:text-4xl">
           Playlists
         </h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>
-          Browse user playlists.{' '}
-          Try:{' '}
-          {['fan_casey', 'journalist_alex', 'ar_rep_morgan'].map((u, i) => (
+        <p className="max-w-2xl text-sm leading-relaxed text-slate-500 sm:text-base">
+          Sample usernames:{' '}
+          {hints.map((u, i) => (
             <span key={u}>
-              {i > 0 && ', '}
-              <code style={{
-                fontFamily: 'JetBrains Mono, monospace', fontSize: 12,
-                color: 'var(--purple)', background: 'var(--purple-dim)',
-                padding: '1px 6px', borderRadius: 4,
-              }}>
-                {u}
-              </code>
+              {i > 0 ? ', ' : null}
+              <code className="text-cyan-500/80">{u}</code>
             </span>
           ))}
         </p>
-      </div>
+      </header>
 
-      <div className="fade-up" style={{ animationDelay: '40ms' }}>
-        <SearchBar
-          value={username}
-          onChange={setUsername}
-          onSubmit={loadPlaylists}
-          placeholder="Username..."
+      <SearchBar
+        value={username}
+        onChange={setUsername}
+        onSubmit={() => void loadPlaylists()}
+        placeholder="Username…"
+        buttonLabel="Load playlists"
+      />
+
+      {loading ? (
+        <PageSpinner label="Loading playlists…" />
+      ) : playlists.length === 0 ? (
+        <EmptyState
+          icon={Music2}
+          title="No playlists loaded"
+          description="Enter a username and load — data comes from /api/playlists."
         />
-      </div>
-
-      {loading && <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading…</p>}
-
-      {!loading && playlists.length > 0 && (
-        <div className="fade-up" style={{ display: 'flex', flexDirection: 'column', gap: 6, animationDelay: '60ms' }}>
+      ) : (
+        <ul className="grid gap-2 sm:grid-cols-2">
           {playlists.map((p, i) => {
             const isSelected = selectedPlaylist === String(p.playlist_id)
             return (
-              <div
-                key={i}
-                onClick={() => loadTracks(Number(p.playlist_id))}
-                style={{
-                  padding: '14px 18px',
-                  borderRadius: 10,
-                  cursor: 'pointer',
-                  transition: 'all 0.14s',
-                  background: isSelected ? 'var(--purple-dim)' : 'var(--bg-surface)',
-                  border: `1px solid ${isSelected ? 'var(--border-active)' : 'var(--border-mid)'}`,
-                }}
-                onMouseEnter={e => {
-                  if (!isSelected) e.currentTarget.style.borderColor = 'var(--border-mid)'
-                  e.currentTarget.style.background = isSelected ? 'var(--purple-dim)' : 'var(--bg-raised)'
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.background = isSelected ? 'var(--purple-dim)' : 'var(--bg-surface)'
-                  e.currentTarget.style.borderColor = isSelected ? 'var(--border-active)' : 'var(--border-mid)'
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontWeight: 500, color: isSelected ? 'var(--purple)' : 'var(--text-primary)', fontSize: 14 }}>
-                    {String(p.name)}
-                  </span>
-                  <span style={{
-                    fontSize: 11, color: 'var(--text-muted)',
-                    fontFamily: 'JetBrains Mono, monospace',
-                  }}>
-                    {String(p.track_count)} tracks
-                  </span>
-                </div>
-                <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 3 }}>
-                  Created {String(p.created_date)}
-                </p>
-              </div>
+              <li key={i}>
+                <button
+                  type="button"
+                  onClick={() => void loadTracks(Number(p.playlist_id))}
+                  className={[
+                    'w-full rounded-xl border px-5 py-4 text-left transition sm:px-6 sm:py-5',
+                    isSelected
+                      ? 'border-cyan-500/35 bg-cyan-500/5 shadow-[inset_0_0_0_1px_rgba(34,211,238,0.15)]'
+                      : 'border-slate-800 bg-slate-900/40 hover:border-slate-700 hover:bg-slate-900/70',
+                  ].join(' ')}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <span className={`font-medium ${isSelected ? 'text-cyan-200' : 'text-slate-100'}`}>
+                      {String(p.name)}
+                    </span>
+                    <span className="shrink-0 font-mono text-[11px] text-slate-500">
+                      {String(p.track_count)} tracks
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">Created {String(p.created_date)}</p>
+                </button>
+              </li>
             )
           })}
-        </div>
+        </ul>
       )}
 
-      {tracks.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <p style={{
-            fontSize: 10.5, fontWeight: 600, letterSpacing: '0.07em',
-            textTransform: 'uppercase', color: 'var(--text-muted)',
-            fontFamily: 'JetBrains Mono, monospace',
-          }}>
-            Tracks in Playlist
-          </p>
-          <ResultsTable rows={tracks} />
-        </div>
-      )}
+      {tracks.length > 0 ? (
+        <section className="space-y-3">
+          <h2 className="font-mono text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+            Tracks in playlist
+          </h2>
+          <DataTable rows={tracks} />
+        </section>
+      ) : null}
     </div>
   )
 }
