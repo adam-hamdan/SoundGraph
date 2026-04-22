@@ -52,7 +52,8 @@ public class ApiHandler implements HttpHandler {
             if (params.containsKey("name"))    return artistQ.searchByName(params.get("name"));
             if (params.containsKey("country")) return artistQ.searchByCountry(params.get("country"));
             if (params.containsKey("genre"))   return artistQ.searchByGenre(params.get("genre"));
-            return artistQ.getTopByListeners(20);
+            int limit = Integer.parseInt(params.getOrDefault("limit", "100"));
+            return artistQ.getTopByListeners(limit);
         }
 
         // GET /api/artists/{id}/report
