@@ -1,103 +1,87 @@
 import { useState } from 'react'
-import ResultsTable from '../components/ResultsTable'
+import DataTable from '../components/DataTable'
+import PageSpinner from '../components/PageSpinner'
+import EmptyState from '../components/EmptyState'
+import { Sprout } from 'lucide-react'
 
 export default function EmergingArtists() {
-  const [debutFrom,    setDebutFrom]    = useState('2018')
+  const [debutFrom, setDebutFrom] = useState('2018')
   const [minListeners, setMinListeners] = useState('500000')
-  const [maxWins,      setMaxWins]      = useState('1')
-  const [results,      setResults]      = useState<Record<string, unknown>[]>([])
-  const [loading,      setLoading]      = useState(false)
+  const [maxWins, setMaxWins] = useState('1')
+  const [results, setResults] = useState<Record<string, unknown>[]>([])
+  const [loading, setLoading] = useState(false)
 
   async function load() {
     setLoading(true)
     try {
       const url = `/api/artists/emerging?debut=${debutFrom}&listeners=${minListeners}&maxWins=${maxWins}`
       const res = await fetch(url)
-      setResults(await res.json())
-    } catch { setResults([]) }
-    finally { setLoading(false) }
+      const data = await res.json()
+      setResults(Array.isArray(data) ? data : [])
+    } catch {
+      setResults([])
+    } finally {
+      setLoading(false)
+    }
   }
 
   const filters = [
-    { label: 'Debut Year ≥',         value: debutFrom,    set: setDebutFrom    },
-    { label: 'Min Monthly Listeners', value: minListeners, set: setMinListeners },
-    { label: 'Max Grammy Wins',       value: maxWins,      set: setMaxWins      },
-  ]
+    { label: 'Debut year ≥', value: debutFrom, set: setDebutFrom },
+    { label: 'Min monthly listeners', value: minListeners, set: setMinListeners },
+    { label: 'Max Grammy wins', value: maxWins, set: setMaxWins },
+  ] as const
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
-      <div className="fade-up">
-        <h1 style={{
-          fontFamily: 'Syne, sans-serif', fontWeight: 800,
-          fontSize: 28, letterSpacing: '-0.02em',
-          color: 'var(--text-primary)', marginBottom: 4,
-        }}>
-          Emerging Artists
-        </h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>
-          A&amp;R discovery tool — find artists growing before mainstream recognition.
+    <div className="space-y-12">
+      <header className="space-y-4">
+        <p className="font-mono text-[10px] font-semibold uppercase leading-relaxed tracking-widest text-cyan-500/80">
+          A&amp;R
         </p>
-      </div>
+        <h1 className="font-display text-3xl font-bold leading-[1.12] tracking-tight text-slate-100 sm:text-4xl">
+          Emerging artists
+        </h1>
+        <p className="max-w-2xl text-sm leading-relaxed text-slate-500 sm:text-base">
+          Discovery filters backed by <code className="text-cyan-500/80">/api/artists/emerging</code>.
+        </p>
+      </header>
 
-      <div
-        className="fade-up"
-        style={{
-          background: 'var(--bg-surface)',
-          border: '1px solid var(--border-mid)',
-          borderRadius: 12, padding: 24,
-          display: 'flex', flexDirection: 'column', gap: 20,
-          animationDelay: '40ms',
-        }}
-      >
-        <p style={{
-          fontSize: 10.5, fontWeight: 600, letterSpacing: '0.07em',
-          textTransform: 'uppercase', color: 'var(--text-muted)',
-          fontFamily: 'JetBrains Mono, monospace',
-        }}>
+      <div className="rounded-xl border border-slate-800/80 bg-slate-900/30 p-7 shadow-lg shadow-black/10 sm:p-9">
+        <p className="font-mono text-[10px] font-semibold uppercase leading-relaxed tracking-wider text-slate-500">
           Filters
         </p>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
+        <div className="mt-5 grid gap-5 sm:grid-cols-3">
           {filters.map(({ label, value, set }) => (
-            <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <label style={{ fontSize: 11.5, color: 'var(--text-muted)', fontWeight: 500 }}>
-                {label}
-              </label>
+            <label key={label} className="flex flex-col gap-2 text-xs font-medium leading-relaxed text-slate-400">
+              {label}
               <input
                 type="number"
                 value={value}
-                onChange={e => set(e.target.value)}
-                style={{
-                  background: 'var(--bg-raised)',
-                  border: '1px solid var(--border-mid)',
-                  borderRadius: 8, padding: '7px 12px',
-                  fontSize: 13, color: 'var(--text-primary)',
-                  fontFamily: 'JetBrains Mono, monospace',
-                  transition: 'border-color 0.14s',
-                }}
+                onChange={(e) => set(e.target.value)}
+                className="min-h-[44px] rounded-lg border border-slate-700 bg-slate-950/60 px-4 py-3 font-mono text-sm leading-snug text-slate-100 focus:border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
               />
-            </div>
+            </label>
           ))}
         </div>
-
         <button
-          onClick={load}
-          style={{
-            alignSelf: 'flex-start',
-            padding: '8px 20px',
-            background: 'var(--purple)', color: '#fff',
-            borderRadius: 8, fontSize: 13, fontWeight: 600,
-            border: 'none', cursor: 'pointer', transition: 'opacity 0.14s',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.opacity = '0.82')}
-          onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+          type="button"
+          onClick={() => void load()}
+          className="mt-7 min-h-[44px] rounded-lg bg-gradient-to-r from-cyan-600 to-teal-600 px-6 py-3 text-sm font-semibold leading-snug text-white shadow-lg shadow-cyan-950/30 transition hover:brightness-110"
         >
-          Find Artists
+          Find artists
         </button>
       </div>
 
-      {loading && <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading…</p>}
-      {!loading && results.length > 0 && <ResultsTable rows={results} />}
+      {loading ? (
+        <PageSpinner label="Running emerging-artist query…" />
+      ) : results.length === 0 ? (
+        <EmptyState
+          icon={Sprout}
+          title="No emerging artists for these filters"
+          description="Loosen debut year, listener floor, or award ceiling — or run Find artists after seeding data."
+        />
+      ) : (
+        <DataTable rows={results} />
+      )}
     </div>
   )
 }

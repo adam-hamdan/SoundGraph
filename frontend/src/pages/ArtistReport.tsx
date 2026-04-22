@@ -1,29 +1,30 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import ResultsTable from '../components/ResultsTable'
+import { ArrowLeft } from 'lucide-react'
+import DataTable from '../components/DataTable'
+import PageSpinner from '../components/PageSpinner'
 
 interface Report {
-  profile:    Record<string, unknown>[]
-  albums:     Record<string, unknown>[]
-  awards:     Record<string, unknown>[]
+  profile: Record<string, unknown>[]
+  albums: Record<string, unknown>[]
+  awards: Record<string, unknown>[]
   chartPeaks: Record<string, unknown>[]
 }
 
-function StatBadge({ label, value, color }: { label: string; value: string; color?: string }) {
+function ProfileStat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
-    <div style={{
-      display: 'flex', flexDirection: 'column', gap: 2,
-      padding: '10px 16px',
-      background: 'var(--bg-surface)',
-      border: '1px solid var(--border-mid)',
-      borderRadius: 8,
-    }}>
-      <span style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'JetBrains Mono, monospace' }}>
+    <div className="rounded-xl border border-slate-800/80 bg-slate-900/40 px-5 py-4 sm:px-6 sm:py-5">
+      <p className="font-mono text-[10px] font-medium uppercase leading-relaxed tracking-wider text-slate-500">
         {label}
-      </span>
-      <span style={{ fontSize: 15, fontWeight: 600, color: color ?? 'var(--text-primary)', fontFamily: 'JetBrains Mono, monospace' }}>
+      </p>
+      <p
+        className={[
+          'mt-2 font-mono text-lg font-semibold leading-snug tracking-tight sm:text-xl',
+          accent ? 'text-cyan-300' : 'text-slate-100',
+        ].join(' ')}
+      >
         {value}
-      </span>
+      </p>
     </div>
   )
 }
@@ -31,151 +32,135 @@ function StatBadge({ label, value, color }: { label: string; value: string; colo
 export default function ArtistReport() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const [report,  setReport]  = useState<Report | null>(null)
+  const [report, setReport] = useState<Report | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error,   setError]   = useState('')
+  const [error, setError] = useState('')
 
   useEffect(() => {
+    setLoading(true)
+    setError('')
     fetch(`/api/artists/${id}/report`)
-      .then(r => r.json())
-      .then(data => { if (data.error) setError(data.error); else setReport(data) })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.error) setError(String(data.error))
+        else setReport(data)
+      })
       .catch(() => setError('Failed to load report'))
       .finally(() => setLoading(false))
   }, [id])
 
-  if (loading) return <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading report…</p>
-  if (error)   return <p style={{ color: '#f87171', fontSize: 13 }}>{error}</p>
+  if (loading) return <PageSpinner label="Loading artist intelligence…" />
+  if (error) {
+    return (
+      <p className="rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-300">{error}</p>
+    )
+  }
   if (!report) return null
 
   const artist = report.profile?.[0]
-  const wins   = (report.awards ?? []).filter(a => a.outcome === 'Won').length
+  const wins = (report.awards ?? []).filter((a) => a.outcome === 'Won').length
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 36 }}>
+    <div className="space-y-12">
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
+        className="inline-flex items-center gap-2 text-xs font-medium text-slate-500 transition hover:text-cyan-400"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+        Back
+      </button>
 
-      {/* Back + artist header */}
-      <div className="fade-up" style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-        <button
-          onClick={() => navigate(-1)}
-          style={{
-            alignSelf: 'flex-start',
-            fontSize: 12, color: 'var(--text-muted)',
-            background: 'none', border: 'none',
-            cursor: 'pointer', padding: 0,
-            transition: 'color 0.12s',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
-          onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
-        >
-          ← Back
-        </button>
-
-        <div>
-          <h1 style={{
-            fontFamily: 'Syne, sans-serif', fontWeight: 800,
-            fontSize: 32, letterSpacing: '-0.025em',
-            color: 'var(--text-primary)', marginBottom: 6,
-          }}>
-            {String(artist?.name ?? '')}
-          </h1>
-          {artist?.genres != null && (
-            <p style={{ fontSize: 13, color: 'var(--purple)', marginBottom: 16 }}>
-              {String(artist.genres)}
-            </p>
-          )}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            <StatBadge label="Country"  value={String(artist?.country ?? '—')} />
-            <StatBadge label="Debut"    value={String(artist?.debut_year ?? '—')} />
-            <StatBadge
-              label="Monthly Listeners"
-              value={Number(artist?.monthly_listeners ?? 0).toLocaleString('en-US')}
-              color="var(--cyan)"
-            />
-            <StatBadge
-              label="Award Wins"
-              value={String(wins)}
-              color={wins > 0 ? 'var(--yellow)' : undefined}
-            />
-          </div>
+      <header className="space-y-4">
+        <h1 className="font-display text-3xl font-bold leading-[1.12] tracking-tight text-slate-100 sm:text-4xl">
+          {String(artist?.name ?? '')}
+        </h1>
+        {artist?.genres != null ? (
+          <p className="text-sm font-medium leading-relaxed text-teal-400/90 sm:text-base">{String(artist.genres)}</p>
+        ) : null}
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <ProfileStat label="Country" value={String(artist?.country ?? '—')} />
+          <ProfileStat label="Debut year" value={String(artist?.debut_year ?? '—')} />
+          <ProfileStat
+            label="Monthly listeners"
+            value={Number(artist?.monthly_listeners ?? 0).toLocaleString('en-US')}
+            accent
+          />
+          <ProfileStat
+            label="Award wins"
+            value={String(wins)}
+            accent={wins > 0}
+          />
         </div>
-      </div>
+      </header>
 
-      {/* Albums */}
-      <section className="fade-up" style={{ animationDelay: '60ms' }}>
-        <SectionHeader>Albums</SectionHeader>
-        <ResultsTable rows={report.albums ?? []} />
+      <section className="space-y-3">
+        <h2 className="font-mono text-[10px] font-semibold uppercase tracking-wider text-slate-500">Albums</h2>
+        {(report.albums ?? []).length === 0 ? (
+          <p className="text-sm text-slate-500">No album rows for this artist.</p>
+        ) : (
+          <DataTable rows={report.albums ?? []} />
+        )}
       </section>
 
-      {/* Awards */}
-      <section className="fade-up" style={{ animationDelay: '100ms' }}>
-        <SectionHeader>Award History</SectionHeader>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-mid)' }}>
-                {['Show', 'Category', 'Year', 'Track', 'Result'].map(h => (
-                  <th key={h} style={{
-                    padding: '7px 12px', textAlign: 'left',
-                    color: 'var(--text-muted)', fontWeight: 500,
-                    fontSize: 10.5, letterSpacing: '0.07em',
-                    textTransform: 'uppercase',
-                    fontFamily: 'JetBrains Mono, monospace',
-                  }}>
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {(report.awards ?? []).map((row, i) => (
-                <tr
-                  key={i}
-                  style={{
-                    borderBottom: '1px solid var(--border)',
-                    background: i % 2 === 1 ? 'rgba(255,255,255,0.012)' : 'transparent',
-                    transition: 'background 0.12s',
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-surface)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = i % 2 === 1 ? 'rgba(255,255,255,0.012)' : 'transparent')}
-                >
-                  <td style={{ padding: '9px 12px', color: 'var(--text-primary)', fontWeight: 500 }}>{String(row.award_show)}</td>
-                  <td style={{ padding: '9px 12px', color: 'var(--text-secondary)', maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{String(row.category)}</td>
-                  <td style={{ padding: '9px 12px', color: 'var(--text-secondary)', fontFamily: 'JetBrains Mono, monospace', fontSize: 12 }}>{String(row.year)}</td>
-                  <td style={{ padding: '9px 12px', color: 'var(--text-muted)', fontSize: 12, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{String(row.track_title ?? '—')}</td>
-                  <td style={{ padding: '9px 12px' }}>
-                    <span style={{
-                      fontSize: 11, padding: '2px 8px', borderRadius: 20,
-                      background: row.outcome === 'Won' ? 'rgba(251,191,36,0.12)' : 'rgba(255,255,255,0.05)',
-                      color: row.outcome === 'Won' ? 'var(--yellow)' : 'var(--text-muted)',
-                      fontWeight: 500,
-                    }}>
-                      {String(row.outcome)}
-                    </span>
-                  </td>
+      <section className="space-y-3">
+        <h2 className="font-mono text-[10px] font-semibold uppercase tracking-wider text-slate-500">Award history</h2>
+        {(report.awards ?? []).length === 0 ? (
+          <p className="text-sm text-slate-500">No awards recorded.</p>
+        ) : (
+          <div className="overflow-x-auto rounded-lg border border-slate-800/80">
+            <table className="w-full min-w-[640px] border-collapse text-left text-[13px]">
+              <thead>
+                <tr className="border-b border-slate-800 bg-slate-900/50">
+                  {['Show', 'Category', 'Year', 'Track', 'Result'].map((h) => (
+                    <th
+                      key={h}
+                      className="px-3 py-2.5 font-mono text-[10px] font-medium uppercase tracking-wider text-slate-500"
+                    >
+                      {h}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {(report.awards ?? []).map((row, i) => (
+                  <tr key={i} className="border-b border-slate-800/50 hover:bg-slate-900/40">
+                    <td className="px-3 py-2.5 font-medium text-slate-200">{String(row.award_show)}</td>
+                    <td className="max-w-[240px] truncate px-3 py-2.5 text-slate-400" title={String(row.category)}>
+                      {String(row.category)}
+                    </td>
+                    <td className="px-3 py-2.5 font-mono text-xs text-slate-400">{String(row.year)}</td>
+                    <td className="max-w-[200px] truncate px-3 py-2.5 text-xs text-slate-500">
+                      {String(row.track_title ?? '—')}
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <span
+                        className={[
+                          'inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium',
+                          row.outcome === 'Won'
+                            ? 'bg-amber-500/15 text-amber-300'
+                            : 'bg-slate-800 text-slate-400',
+                        ].join(' ')}
+                      >
+                        {String(row.outcome)}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
 
-      {/* Chart Peaks */}
-      <section className="fade-up" style={{ animationDelay: '140ms' }}>
-        <SectionHeader>Chart Peaks</SectionHeader>
-        <ResultsTable rows={report.chartPeaks ?? []} />
+      <section className="space-y-3">
+        <h2 className="font-mono text-[10px] font-semibold uppercase tracking-wider text-slate-500">Chart peaks</h2>
+        {(report.chartPeaks ?? []).length === 0 ? (
+          <p className="text-sm text-slate-500">No chart history for this artist.</p>
+        ) : (
+          <DataTable rows={report.chartPeaks ?? []} />
+        )}
       </section>
     </div>
-  )
-}
-
-function SectionHeader({ children }: { children: React.ReactNode }) {
-  return (
-    <p style={{
-      fontSize: 10.5, fontWeight: 600, letterSpacing: '0.07em',
-      textTransform: 'uppercase', color: 'var(--text-muted)',
-      fontFamily: 'JetBrains Mono, monospace', marginBottom: 12,
-    }}>
-      {children}
-    </p>
   )
 }
